@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
+import React, { useState } from "react";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
 
 export default function Main() {
   const [file, setFile] = useState(null);
-  const [fileText, setFileText] = useState('');
-  const [text, setText] = useState('');
+  const [fileText, setFileText] = useState("");
+  const [text, setText] = useState("");
   const [apiResponse, setApiResponse] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [errorText, setErrorText] = useState("");
 
   const handleFileChange = (event: any) => {
     setFile(event.target.files[0]);
@@ -21,14 +23,24 @@ export default function Main() {
   };
 
   const handleGenerate = async () => {
-    // Call your API here and set the response in the state variable `apiResponse`
-    // For example:
-    const response = await fetch('/api/generate', {
-      method: 'POST',
-      body: JSON.stringify({ text }),
-    });
-    const data = await response.json();
-    setApiResponse(data);
+    setLoading(true);
+    setErrorText("");
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        body: JSON.stringify({
+          ["job-description"]: text,
+          resume: fileText,
+        }) as any,
+      });
+      const data = await response.json();
+      console.log("response data is coming here ", data);
+      setApiResponse(data);
+      setLoading(false);
+    } catch (e) {
+      setErrorText("OMG!");
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,14 +55,14 @@ export default function Main() {
           <textarea
             className="w-1/2 p-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500"
             rows={5}
-            value={text}
-            onChange={handleTextChange}
+            value={fileText}
+            onChange={handleFileTextChange}
           />
         </div>
         <div className="mb-4 flex flex-col justify-center items-center">
           <label className="block mb-2 font-bold">
-            {' '}
-            Input Job Description{' '}
+            {" "}
+            Input Job Description{" "}
           </label>
           <textarea
             className="w-1/2 p-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500"
@@ -64,10 +76,15 @@ export default function Main() {
         <button
           className="p-3 bg-blue-500 text-white font-bold rounded"
           onClick={handleGenerate}
+          disabled={loading}
         >
-          Score My Resume
+          {loading ? `Getting Scores` : `Score My Resume`}
         </button>
       </div>
+      <div className="flex justify-center mt-16 text-red-900">
+        {errorText}
+      </div>
+
 
       {apiResponse && <ApiResponseTable apiResponse={apiResponse} />}
     </div>
@@ -76,19 +93,19 @@ export default function Main() {
 
 function ApiResponseTable({ apiResponse }: any) {
   const sectionKeys = [
-    { key: 'title', label: 'Title' },
-    { key: 'experience', label: 'Experience' },
-    { key: 'skills', label: 'Skills' },
-    { key: 'summary', label: 'Summary' },
+    { key: "title", label: "Title" },
+    { key: "experience", label: "Experience" },
+    { key: "skills", label: "Skills" },
+    { key: "summary", label: "Summary" },
   ];
 
   const getPathColor = (val: number) => {
     if (val < 5) {
-      return '#FF0000';
+      return "#FF0000";
     } else if (val < 9) {
-      return '#FF8C00';
+      return "#FF8C00";
     } else {
-      return '#2E8B57';
+      return "#2E8B57";
     }
   };
 
@@ -125,12 +142,12 @@ function ApiResponseTable({ apiResponse }: any) {
                 <div className="py-4 px-6">
                   {Array.isArray(apiResponse[`${key}_points`])
                     ? apiResponse[`${key}_points`].map(
-                        (point: any, index: any) => (
-                          <p key={index} className="mb-2">
-                            {point}
-                          </p>
-                        )
+                      (point: any, index: any) => (
+                        <p key={index} className="mb-2">
+                          {point}
+                        </p>
                       )
+                    )
                     : apiResponse[`${key}_points`]}
                 </div>
               </div>
